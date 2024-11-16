@@ -9,12 +9,15 @@ COPY package.json yarn.lock ./
 
 RUN yarn
 
+RUN sed -i 's/flat()\[0\]/flat().at(-1)/' ./node_modules/@vlayer/sdk/dist/api/email/dnsResolver.js
+
 COPY . .
 
 # Next.js collects completely anonymous telemetry data about general usage.
 # Learn more here: https://nextjs.org/telemetry
 # Uncomment the following line in case you want to disable telemetry during the build.
 # ENV NEXT_TELEMETRY_DISABLED 1
+
 
 RUN yarn build
 
@@ -37,12 +40,14 @@ COPY --from=build /app/package.json ./package.json
 # https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=build --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=build --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY .env.dev /app/.env.dev
+COPY .env.testnet /app/.env.testnet
 
 USER nextjs
 
-EXPOSE 3000
+EXPOSE 8080
 
-ENV PORT=3000
+ENV PORT=8080
 ENV DSTACK_SIMULATOR_ENDPOINT="http://host.docker.internal:8090"
 # server.js is created by next build from the standalone output
 # https://nextjs.org/docs/pages/api-reference/next-config-js/output
