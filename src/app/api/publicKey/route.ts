@@ -15,5 +15,5 @@ export async function GET() {
   const keccakPrivateKey = keccak256(testDeriveKey.asUint8Array());
   const account = privateKeyToAccount(keccakPrivateKey);
   console.log(account);
-  return Response.json({ account: account.address });
+  return Response.json({ account: account.publicKey });
 }
