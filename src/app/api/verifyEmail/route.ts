@@ -12,6 +12,9 @@ import proverSpec from "../../../../EmailProver";
 // @ts-ignore
 import verifierSpec from "../../../../EmailProofVerifier";
 import { filterDKIMHeaders } from "@/app/lib/utils";
+import { SignProtocolClient, SpMode, EvmChains } from "@ethsign/sp-sdk";
+import { keccak256 } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
 
 export const dynamic = "force-dynamic";
 
@@ -25,9 +28,17 @@ const endpoint =
 //   );
 // }
 
+const privateKey =
+  "0x58b0402e54e4072fabac98782a4c58083bff90f384fa37dc0eb9c179f525f045";
+
 export async function POST(request: NextRequest) {
+  const signClient = new SignProtocolClient(SpMode.OnChain, {
+    chain: EvmChains.sepolia,
+    account: privateKeyToAccount(privateKey),
+  });
+
   console.log(request);
-  const { encryptedEmail } = await request.json();
+  const { encryptedEmail, address } = await request.json();
   const processedEmail = filterDKIMHeaders(encryptedEmail);
   const unverifiedEmail = await preverifyEmail(processedEmail);
   const { prover, verifier } = await deployVlayerContracts({
@@ -80,10 +91,18 @@ export async function POST(request: NextRequest) {
   // const testDeriveKey = await client.deriveKey("/", "test");
   // const keccakPrivateKey = keccak256(testDeriveKey.asUint8Array());
   // const email = decryptWithPrivateKey(keccakPrivateKey, encryptedEmail);
-  console.log(encryptedEmail);
   console.log(endpoint);
   const randomNumString = Math.random().toString();
   console.log(randomNumString);
   const getRemoteAttestation = await client.tdxQuote(randomNumString);
+
+  const res = await signClient.createAttestation({
+    schemaId: "0x31d",
+    data: { verifiedUser: address },
+    indexingValue: "xxx",
+  });
+
+  console.log(res);
+
   return Response.json({ encryptedEmail, getRemoteAttestation });
 }
